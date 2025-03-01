@@ -6,17 +6,19 @@ from app.config import Config
 # ✅ Configure Gemini API
 genai.configure(api_key=Config.GEMINI_API_KEY)
 
-# ✅ Use the correct model for free-tier users
-model = genai.GenerativeModel("gemini-1.5-flash")  # or "gemini-1.5-pro"
+# ✅ Use the correct model
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 def extract_task_from_text(user_message):
     """Send user message to Gemini API and extract potential tasks."""
     
     prompt = f"""
-    Extract task-related information from the following user message:
+    Analyze the following user message:
     Message: "{user_message}"
 
-    If the message contains a task, return a JSON object with:
+    Determine if the message is truly a task or just general conversation.
+    
+    If it is a task, return a JSON object with:
     {{
         "task_detected": true,
         "task_title": "...",
@@ -25,31 +27,54 @@ def extract_task_from_text(user_message):
         "confirmation_needed": true/false
     }}
 
-    If no task is found, return: {{"task_detected": false}}.
+    If it is NOT a task (e.g., a joke request, question, or greeting), return:
+    {{
+        "task_detected": false,
+        "reason": "Message is a general chat request."
+    }}
+    
     Only return JSON. Do not include explanations or extra text.
     """
 
     try:
-        response = model.generate_content(prompt)  # ✅ Use correct function
-        response_text = response.text.strip()  # ✅ Ensure clean output
-        print("🔍 Raw Gemini Response:", response_text)  # ✅ Debugging line
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        print("🔍 Raw Task Response:", response_text)
 
-        # ✅ Step 1: Remove Markdown-style code blocks
+        # ✅ Remove Markdown-style code blocks
         cleaned_response = re.sub(r"```json|```", "", response_text).strip()
 
-        # ✅ Step 2: Extract only JSON using regex
+        # ✅ Extract JSON part only
         match = re.search(r"\{.*\}", cleaned_response, re.DOTALL)
         if match:
-            cleaned_response = match.group(0)  # Extract JSON part only
+            cleaned_response = match.group(0)
         else:
             print("❌ No valid JSON found in response.")
             return {"task_detected": False}
 
-        # ✅ Step 3: Parse JSON safely
         task_data = json.loads(cleaned_response)
-
-        return task_data  # ✅ Successfully return structured data
+        return task_data  
 
     except (json.JSONDecodeError, AttributeError) as e:
         print(f"❌ Error parsing Gemini response: {e}")
-        return {"task_detected": False}  # ✅ Fail gracefully
+        return {"task_detected": False}
+
+def generate_chat_response(user_message):
+    """Send a general chat message to Gemini API for an intelligent response."""
+    
+    prompt = f"""
+    You are a helpful AI assistant. Respond to the following message in a friendly and natural way:
+    "{user_message}"
+    
+    Keep your response concise and helpful.
+    """
+
+    try:
+        response = model.generate_content(prompt)
+        chat_response = response.text.strip()
+        print("💬 Chatbot Response:", chat_response)
+        return chat_response
+
+    except Exception as e:
+        print(f"❌ Error generating chat response: {e}")
+        return "I'm here to assist you!"
