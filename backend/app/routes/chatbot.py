@@ -10,7 +10,10 @@ pending_tasks = {}
 def is_casual_mention(user_message):
     """Detect if a message is a casual mention instead of a direct command."""
     casual_phrases = ["i need to", "i have to", "i'm planning to", "i should", "i must", "i will"]
-    return any(phrase in user_message.lower())
+    
+    # ✅ Fix: Ensure `phrase` is properly referenced inside `any()`
+    return any(phrase in user_message.lower() for phrase in casual_phrases)
+
 
 def is_task_retrieval_request(user_message):
     """Detect if the user is asking for their task list."""
