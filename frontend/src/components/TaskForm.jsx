@@ -23,12 +23,6 @@ function TaskForm({ refreshTasks }) {
     refreshTasks();
   };
 
-  const getMinDateTime = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-  };
-
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
       <h2 style={styles.header}>📝 Add a New Task</h2>
@@ -64,7 +58,6 @@ function TaskForm({ refreshTasks }) {
         value={task.due_date}
         onChange={handleChange}
         style={styles.input}
-        min={getMinDateTime()}
       />
       <button type="submit" style={styles.addButton}>➕ Add Task</button>
     </form>
@@ -77,55 +70,44 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     gap: "15px",
-    background: "#1e1e2f",
+    background: "#fff",
     padding: "20px",
-    borderRadius: "12px",
-    boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.2)",
-    width: "420px",
+    borderRadius: "8px",
+    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+    width: "400px",
     margin: "auto",
-    color: "#ffffff",
   },
   header: {
-    fontSize: "24px",
+    fontSize: "22px",
     marginBottom: "10px",
-    color: "#f1c40f",
   },
   input: {
     width: "100%",
-    padding: "12px",
-    border: "1px solid #444",
-    borderRadius: "6px",
-    background: "#2c2c3e",
-    color: "#ffffff",
+    padding: "10px",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
   },
   textarea: {
     width: "100%",
-    padding: "12px",
-    border: "1px solid #444",
-    borderRadius: "6px",
-    background: "#2c2c3e",
-    color: "#ffffff",
-    height: "90px",
+    padding: "10px",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
+    height: "80px",
   },
   select: {
     width: "100%",
-    padding: "12px",
-    border: "1px solid #444",
-    borderRadius: "6px",
-    background: "#2c2c3e",
-    color: "#ffffff",
+    padding: "10px",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
   },
   addButton: {
-    background: "#f1c40f",
-    color: "#1e1e2f",
+    background: "green",
+    color: "white",
     border: "none",
     cursor: "pointer",
-    padding: "12px 16px",
+    padding: "10px 15px",
     width: "100%",
-    borderRadius: "6px",
-    fontSize: "16px",
-    fontWeight: "bold",
-    transition: "0.3s",
+    borderRadius: "5px",
   },
 };
 
