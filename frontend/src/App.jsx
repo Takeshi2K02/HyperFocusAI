@@ -1,10 +1,15 @@
 import React from "react";
+import TaskList from "./components/TaskList";
+import TaskForm from "./components/TaskForm";
+import Chatbot from "./components/Chatbot";  // Import chatbot
 
 function App() {
   return (
     <div style={styles.container}>
-      <h1>🚀 Welcome to HyperFocus AI</h1>
-      <p>Your AI-powered productivity assistant is up and running!</p>
+      <h1>🚀 HyperFocus AI</h1>
+      <TaskForm />
+      <TaskList />
+      <Chatbot />  {/* ✅ Add Chatbot Component */}
     </div>
   );
 }
