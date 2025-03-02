@@ -1,28 +1,60 @@
 import React from "react";
-import TaskList from "./components/TaskList";
-import TaskForm from "./components/TaskForm";
-import Chatbot from "./components/Chatbot";  // Import chatbot
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import TaskPage from "./pages/TaskPage";
+import ChatPage from "./pages/ChatPage";
 
 function App() {
   return (
-    <div style={styles.container}>
-      <h1>🚀 HyperFocus AI</h1>
-      <TaskForm />
-      <TaskList />
-      <Chatbot />  {/* ✅ Add Chatbot Component */}
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/tasks" element={<TaskPage />} />
+        <Route path="/chats" element={<ChatPage />} />
+      </Routes>
+    </Router>
+  );
+}
+
+function HomePage() {
+  return (
+    <div style={styles.homeContainer}>
+      <h1>🚀 Welcome to HyperFocus AI</h1>
+      <p>Your AI-powered productivity assistant.</p>
+      <div style={styles.buttonContainer}>
+        <Link to="/tasks">
+          <button style={styles.button}>📋 Manage Tasks</button>
+        </Link>
+        <Link to="/chats">
+          <button style={styles.button}>💬 Open Chatbot</button>
+        </Link>
+      </div>
     </div>
   );
 }
 
 const styles = {
-  container: {
+  homeContainer: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     height: "100vh",
-    fontFamily: "Arial, sans-serif",
     textAlign: "center",
+  },
+  buttonContainer: {
+    display: "flex",
+    gap: "20px",
+    marginTop: "20px",
+  },
+  button: {
+    backgroundColor: "#007bff",
+    color: "white",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: "8px",
+    fontSize: "16px",
+    cursor: "pointer",
+    transition: "background 0.3s",
   },
 };
 
