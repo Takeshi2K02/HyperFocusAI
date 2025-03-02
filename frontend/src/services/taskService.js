@@ -30,3 +30,16 @@ export const deleteTask = async (taskId) => {
     console.error("Error deleting task:", error);
   }
 };
+
+export const sendMessage = async (message) => {
+  try {
+    const response = await axios.post("http://localhost:5000/chat", { message });
+
+    console.log("✅ Chatbot API Raw Response:", response.data);  // ✅ Debugging log
+
+    return response.data;  // Ensure we return the API response correctly
+  } catch (error) {
+    console.error("❌ Error sending message:", error);
+    return { response: "⚠️ Failed to fetch chatbot response." };
+  }
+};
