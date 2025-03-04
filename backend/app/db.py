@@ -6,7 +6,11 @@ class MongoService:
         """Initialize MongoDB Connection"""
         self.client = MongoClient(Config.MONGO_URI)  # Direct connection
         self.db = self.client["HyperFocusDB"]  # Select Database
-        self.tasks_collection = self.db["tasks"]  # Select Collection
+
+        # ✅ Collections
+        self.tasks_collection = self.db["tasks"]
+        self.chats_collection = self.db["chats"]  # Stores chat sessions
+        self.messages_collection = self.db["messages"]  # Stores chat messages
 
     def get_db(self):
         """Return the database instance"""

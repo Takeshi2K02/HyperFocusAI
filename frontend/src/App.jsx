@@ -9,7 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/tasks" element={<TaskPage />} />
-        <Route path="/chats" element={<ChatPage />} />
+        <Route path="/chat/:chatId?" element={<ChatPage />} />
       </Routes>
     </Router>
   );
@@ -24,7 +24,7 @@ function HomePage() {
         <Link to="/tasks">
           <button style={styles.button}>📋 Manage Tasks</button>
         </Link>
-        <Link to="/chats">
+        <Link to="/chat">
           <button style={styles.button}>💬 Open Chatbot</button>
         </Link>
       </div>
