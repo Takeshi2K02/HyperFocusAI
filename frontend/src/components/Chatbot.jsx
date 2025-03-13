@@ -1,88 +1,173 @@
-import React, { useState, useEffect, useRef } from "react";
-import { getOrCreateChat, sendMessage, fetchChatMessages } from "../services/chatService";
-import { FaPaperPlane } from "react-icons/fa";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { fetchChatMessages, sendMessage } from "../services/chatService";
+import { useChat } from "../context/ChatContext";
 
-function Chatbot({ userId }) {
-  const { chatId: urlChatId } = useParams();  // ✅ Get chatId from URL
-  const [chatId, setChatId] = useState(null);
+const Chatbot = () => {
+  const { chatId: urlChatId } = useParams();
+  const navigate = useNavigate();
+  const { chatId, setChatId } = useChat();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
 
-  // ✅ Ensure chatId is correctly set when visiting a previous chat
+  // ✅ Sync `chatId` from URL or Context
   useEffect(() => {
-    console.log("🌐 URL Chat ID:", urlChatId);
-    if (urlChatId && urlChatId !== "null") {
+    if (urlChatId && chatId !== urlChatId) {
       setChatId(urlChatId);
-      console.log("✅ Setting Chat ID in State:", urlChatId);
     }
-  }, [urlChatId]);
+  }, [urlChatId, chatId, setChatId]);
 
-  // ✅ Load messages when chatId is set
+  // ✅ Load messages when chatId changes
   useEffect(() => {
     if (!chatId) return;
-    console.log("🔄 Loading Messages for Chat ID:", chatId);
 
     const loadMessages = async () => {
-      const chatHistory = await fetchChatMessages(chatId);
-      console.log("📜 Loaded Messages:", chatHistory);
+      console.log("📩 Fetching messages for chat:", chatId);
+      const chatData = await fetchChatMessages(chatId);
 
-      setMessages(chatHistory.map(msg => ({
-        sender: msg.role === "user" ? "user" : "bot",
-        text: msg.content
-      })));
+      if (chatData && Array.isArray(chatData) && chatData.length > 0) {
+        console.log("✅ Messages exist:", chatData.length, "messages found.");
+        setMessages(chatData);
+      } else {
+        console.warn("⚠️ No messages found for this chat.");
+        setMessages([]);
+      }
     };
 
     loadMessages();
-  }, [chatId]);
+  }, [chatId]); // ✅ Runs when `chatId` changes
 
+  // ✅ Scroll to the latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ✅ Function to send a message
   const handleSendMessage = async () => {
     if (!input.trim()) return;
-  
-    let newChatId = chatId;
-  
-    // ✅ Create chat only when first message is sent
-    if (!chatId || chatId === "null") {
-      try {
-        const response = await sendMessage(null, "user", input, userId);  // ✅ Pass userId
-        newChatId = response.chat_id;  // ✅ Backend returns chat_id
-        setChatId(newChatId);
-        navigate(`/chat/${newChatId}`, { replace: true });
-      } catch (error) {
-        console.error("❌ Error creating chat:", error);
-        return;
-      }
-    }
-  
-    // ✅ Add message to UI
-    setMessages((prev) => [...prev, { sender: "user", text: input }]);
+
+    console.log("💬 Sending message:", input, "to chat:", chatId);
+
+    const userMessage = { role: "user", content: input };
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
-  
+
     try {
-      const botResponse = await sendMessage(newChatId, "user", input);
-      setMessages((prev) => [...prev, { sender: "bot", text: botResponse.message || "⚠️ No response from bot." }]);
+      const response = await sendMessage(chatId, "user", input);
+      console.log("🛠️ API Response:", response);
+
+      // ✅ If a new chat is created, update the URL & chatId
+      if (!chatId && response.chat_id) {
+        console.log("🔄 New chat detected. Updating URL:", response.chat_id);
+        setChatId(response.chat_id);
+        navigate(`/chat/${response.chat_id}`);
+      }
+
+      // ✅ Fetch latest messages immediately to reflect updates
+      const updatedMessages = await fetchChatMessages(response.chat_id || chatId);
+      console.log("🔄 Updated Messages After Send:", updatedMessages);
+      setMessages(updatedMessages);
+      
     } catch (error) {
       console.error("❌ Error sending message:", error);
     }
-  };   
+  };
 
   return (
-    <div>
-      <h2>{chatId ? `Chat ${chatId}` : "New Chat"}</h2>
-      <div>
+    <div style={styles.chatContainer}>
+      <h2>Chat {chatId || "New Chat"}</h2>
+      <div style={styles.messageContainer}>
         {messages.length > 0 ? (
           messages.map((msg, index) => (
-            <div key={index}>{msg.sender}: {msg.text}</div>
+            <div
+              key={msg.message_id || index}
+              style={{
+                ...styles.messageBubble,
+                ...(msg.role === "user" ? styles.userMessage : styles.assistantMessage),
+              }}
+            >
+              {msg.content}
+            </div>
           ))
         ) : (
-          <p>Start a conversation...</p>
+          <p>Loading messages...</p>
         )}
+        <div ref={messagesEndRef} />
       </div>
-      <input value={input} onChange={(e) => setInput(e.target.value)} />
-      <button onClick={handleSendMessage}><FaPaperPlane /></button>
+
+      {/* ✅ Input Field and Send Button */}
+      <div style={styles.inputContainer}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type a message..."
+          style={styles.input}
+        />
+        <button onClick={handleSendMessage} style={styles.sendButton}>Send</button>
+      </div>
     </div>
   );
-}
+};
+
+// ✅ Styling
+const styles = {
+  chatContainer: {
+    flex: 1,
+    padding: "20px",
+    height: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  messageContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    marginTop: "10px",
+    overflowY: "auto",
+    flex: 1,
+  },
+  messageBubble: {
+    padding: "10px",
+    borderRadius: "10px",
+    maxWidth: "60%",
+    wordWrap: "break-word",
+    fontSize: "16px",
+  },
+  userMessage: {
+    alignSelf: "flex-end",
+    backgroundColor: "#007bff",
+    color: "white",
+  },
+  assistantMessage: {
+    alignSelf: "flex-start",
+    backgroundColor: "#f1f1f1",
+    color: "black",
+  },
+  inputContainer: {
+    display: "flex",
+    alignItems: "center",
+    padding: "10px",
+    borderTop: "1px solid #ccc",
+    background: "#fff",
+  },
+  input: {
+    flex: 1,
+    padding: "12px",
+    borderRadius: "20px",
+    fontSize: "1rem",
+    backgroundColor: "#f1f1f1",
+  },
+  sendButton: {
+    backgroundColor: "#007bff",
+    color: "#fff",
+    borderRadius: "8px",
+    padding: "10px 15px",
+    marginLeft: "10px",
+    cursor: "pointer",
+  },
+};
 
 export default Chatbot;

@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import requests
 import json
 import re
 from app.config import Config
@@ -8,6 +9,30 @@ genai.configure(api_key=Config.GEMINI_API_KEY)
 
 # ✅ Use the correct model
 model = genai.GenerativeModel("gemini-1.5-flash")
+
+def generate_chat_title(user_message):
+    """Generate a short, meaningful chat title from the first user message using Gemini API."""
+    
+    prompt_text = f"""
+    Generate a short and meaningful chat title (max 6 words) based on the following message:
+    "{user_message}"
+    
+    ONLY return the title without any explanations or extra text.
+    """
+
+    try:
+        response = model.generate_content(prompt_text)
+        chat_title = response.text.strip()
+
+        print("📝 AI-Generated Chat Title:", chat_title)
+
+        # ✅ Ensure the title is concise
+        return chat_title if len(chat_title.split()) <= 6 else "Untitled Chat"
+
+    except Exception as e:
+        print(f"❌ Error generating chat title: {e}")
+        return "Untitled Chat"  # ✅ Prevents failures
+
 
 def extract_task_from_text(user_message):
     """Send user message to Gemini API and extract potential tasks."""

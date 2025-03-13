@@ -1,0 +1,44 @@
+HyperFocusAI/
+│── backend/
+│   ├── app/
+│   │   ├── routes/  
+│   │   │   ├── tasks.py
+│   │   │   ├── Chatbot.py
+│   │   │   ├── chat_routes.py
+│   │   ├── models/  
+│   │   │   ├── task_model.py  # Task Schema 
+│   │   │   ├── chat_model.py  # ✅ Schema for storing chat sessions
+│   │   │   ├── message_model.py
+│   │   ├── services/  
+│   │   │   ├── task_service.py
+│   │   │   ├── nlu_service.py
+│   │   │   ├── chat_service.py
+│   │   ├── utils/
+│   │   ├── db.py  # ✅ Direct MongoDB connection using MongoClient  
+│   │   ├── main.py  # Flask app entry point  
+│   │   ├── config.py  # Configuration (MongoDB URI, API keys)  
+│   ├── requirements.txt  
+│   ├── run.py  # Start script for the backend  
+│
+frontend/  
+│── src/ 
+│   ├── assets/ 
+│   ├── components/  
+│   │   ├── Chatbot.jsx
+│   │   ├── TaskForm.jsx
+│   │   ├── TaskList.jsx
+│   │   ├── ChatSidebar.jsx
+│   ├── context/  # ✅ NEW FOLDER FOR CONTEXT API
+│   │   ├── ChatContext.js  # ✅ Context for managing chat state globally
+│   ├── pages/
+│   │   ├── ChatPage.jsx
+│   │   ├── TaskPage.jsx
+│   ├── services/  
+│   │   ├── chatService.js
+│   │   ├── taskService.js
+│   ├── App.jsx 
+│   ├── main.jsx 
+│   ├── package.json  
+│
+│── scripts/  
+│   ├── setup_db.py  # (Can be removed unless needed for other setup tasks)  

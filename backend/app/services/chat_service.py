@@ -3,15 +3,15 @@ from app.models.chat_model import Chat, Message
 from bson import ObjectId
 from app.services.nlu_service import generate_chat_response  # ✅ Import Gemini API function
 from datetime import datetime
+from app.services.nlu_service import generate_chat_title  # ✅ Import title generator
 
 # ✅ Get Database Collections
 chats_collection = mongo_service.chats_collection
 messages_collection = mongo_service.messages_collection
 
 def get_or_create_chat(user_id, title="New Chat"):
-    """Create a new chat only when the user sends a message for the first time."""
+    """Create a new chat but allow title updates later."""
     
-    # ✅ Do NOT return the latest chat; always create a new one
     chat_obj = Chat(user_id=user_id, title=title)
     result = chats_collection.insert_one(chat_obj.to_dict())
     
@@ -35,24 +35,32 @@ def delete_chat(chat_id):
 def store_message(chat_id, role, content, token_count=0):
     """Store both user and assistant messages in an existing chat session."""
 
+    print(f"📝 Storing message - Chat ID: {chat_id}, Role: {role}, Content: {content}")  # ✅ Debugging
+
     message = Message(chat_id=chat_id, role=role, content=content, token_count=token_count)
     result = messages_collection.insert_one(message.to_dict())
     message_id = str(result.inserted_id)
 
-    # ✅ Call Gemini API for an assistant response
+    # ✅ Call Gemini API only for user messages
     if role == "user":
-        assistant_reply = generate_chat_response(content)  # ✅ Get real AI response
+        print("⚡ Calling AI for response...")  # ✅ Debugging
+        assistant_reply = generate_chat_response(content)
 
-        assistant_message = Message(chat_id=chat_id, role="assistant", content=assistant_reply)
-        assistant_result = messages_collection.insert_one(assistant_message.to_dict())
-        assistant_message_id = str(assistant_result.inserted_id)
+        if assistant_reply:
+            print(f"🤖 AI Response Received: {assistant_reply}")  # ✅ Debugging
 
-        # ✅ Update chat with both user and assistant messages
-        chats_collection.update_one(
-            {"_id": ObjectId(chat_id)},
-            {"$push": {"messages": {"$each": [message_id, assistant_message_id]}},
-             "$set": {"updated_at": datetime.utcnow().isoformat()}}
-        )
+            assistant_message = Message(chat_id=chat_id, role="assistant", content=assistant_reply)
+            assistant_result = messages_collection.insert_one(assistant_message.to_dict())
+            assistant_message_id = str(assistant_result.inserted_id)
+
+            # ✅ Update chat with both user and assistant messages
+            chats_collection.update_one(
+                {"_id": ObjectId(chat_id)},
+                {"$push": {"messages": {"$each": [message_id, assistant_message_id]}},
+                 "$set": {"updated_at": datetime.utcnow().isoformat()}}
+            )
+        else:
+            print("⚠️ AI did not return a response!")  # ✅ Debugging
     else:
         # ✅ If it's already an assistant message, just update normally
         chats_collection.update_one(
@@ -61,7 +69,7 @@ def store_message(chat_id, role, content, token_count=0):
              "$set": {"updated_at": datetime.utcnow().isoformat()}}
         )
 
-    return message_id  # ✅ Only return the user message ID
+    return message_id
 
 def get_chat_messages(chat_id):
     """Retrieve all messages within a chat session."""

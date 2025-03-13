@@ -2,16 +2,19 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import TaskPage from "./pages/TaskPage";
 import ChatPage from "./pages/ChatPage";
+import { ChatProvider } from "./context/ChatContext"; // ✅ Import ChatProvider
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/tasks" element={<TaskPage />} />
-        <Route path="/chat/:chatId?" element={<ChatPage />} />
-      </Routes>
-    </Router>
+    <ChatProvider> {/* ✅ Wrap the whole app in ChatProvider */}
+      <Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/tasks" element={<TaskPage />} />
+          <Route path="/chat/:chatId?" element={<ChatPage />} />
+        </Routes>
+      </Router>
+    </ChatProvider>
   );
 }
 
