@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchChatMessages, sendMessage } from "../services/chatService";
+import { fetchChatMessages, fetchUserChats , sendMessage } from "../services/chatService";
 import { useChat } from "../context/ChatContext";
 
 const Chatbot = () => {
   const { chatId: urlChatId } = useParams();
   const navigate = useNavigate();
-  const { chatId, setChatId } = useChat();
+  const { chatId, setChatId, chats, setChats, userId } = useChat();  // ✅ userId now exists
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
@@ -43,7 +43,6 @@ const Chatbot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ✅ Function to send a message
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
@@ -54,25 +53,34 @@ const Chatbot = () => {
     setInput("");
 
     try {
-      const response = await sendMessage(chatId, "user", input);
-      console.log("🛠️ API Response:", response);
+        const response = await sendMessage(chatId, "user", input);
+        console.log("🛠️ API Response:", response);
 
-      // ✅ If a new chat is created, update the URL & chatId
-      if (!chatId && response.chat_id) {
-        console.log("🔄 New chat detected. Updating URL:", response.chat_id);
-        setChatId(response.chat_id);
-        navigate(`/chat/${response.chat_id}`);
-      }
+        // ✅ If a new chat is created, update the context & sidebar instantly
+        if (!chatId && response.chat_id) {
+            console.log("🔄 New chat detected. Updating context & sidebar.");
+            setChatId(response.chat_id);
+            navigate(`/chat/${response.chat_id}`);
+        }
 
-      // ✅ Fetch latest messages immediately to reflect updates
-      const updatedMessages = await fetchChatMessages(response.chat_id || chatId);
-      console.log("🔄 Updated Messages After Send:", updatedMessages);
-      setMessages(updatedMessages);
-      
+        // ✅ Fetch latest messages immediately
+        const updatedMessages = await fetchChatMessages(response.chat_id || chatId);
+        setMessages(updatedMessages);
+
+        // ✅ Fetch updated chat list to get AI-generated title
+        if (userId) {
+            console.log("🔄 Fetching updated chat list for user:", userId);
+            const updatedChats = await fetchUserChats(userId);  
+            setChats(updatedChats);  // ✅ Update sidebar with correct AI-generated title
+        } else {
+            console.warn("⚠️ userId is not defined. Skipping chat update.");
+        }
+
     } catch (error) {
-      console.error("❌ Error sending message:", error);
+        console.error("❌ Error sending message:", error);
     }
   };
+
 
   return (
     <div style={styles.chatContainer}>

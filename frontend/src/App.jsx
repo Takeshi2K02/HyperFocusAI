@@ -2,11 +2,13 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import TaskPage from "./pages/TaskPage";
 import ChatPage from "./pages/ChatPage";
-import { ChatProvider } from "./context/ChatContext"; // ✅ Import ChatProvider
+import { ChatProvider } from "./context/ChatContext";  // ✅ Import ChatProvider
 
 function App() {
+  const userId = "temp_123456";  // ✅ Replace with dynamic user ID if needed
+
   return (
-    <ChatProvider> {/* ✅ Wrap the whole app in ChatProvider */}
+    <ChatProvider initialUserId={userId}>  {/* ✅ Pass userId to ChatProvider */}
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />

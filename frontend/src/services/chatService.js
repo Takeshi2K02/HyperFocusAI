@@ -67,3 +67,18 @@ export const deleteChat = async (chatId) => {
     return false;
   }
 };
+
+// ✅ Rename a chat
+export const renameChat = async (chatId, newTitle) => {
+  try {
+    console.log("✏️ Renaming chat:", chatId, "→", newTitle);
+    
+    const response = await axios.put(`${CHAT_API_URL}/rename/${chatId}`, { title: newTitle });
+
+    console.log("✅ Chat renamed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error renaming chat:", error);
+    return null;
+  }
+};

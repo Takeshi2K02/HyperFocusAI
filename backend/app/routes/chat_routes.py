@@ -4,7 +4,8 @@ from app.services.chat_service import (
     delete_chat,
     store_message,
     get_chat_messages,
-    get_user_chats
+    get_user_chats,
+    rename_chat
 )
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/chat")
@@ -70,3 +71,29 @@ def send_message():
     message_id = store_message(chat_id, role, content)
 
     return jsonify({"chat_id": chat_id, "message_id": message_id}), 201
+
+@chat_bp.route("/rename/<chat_id>", methods=["PUT"])
+def rename_chat_route(chat_id):
+    """API Endpoint to rename a chat"""
+    data = request.json
+    new_title = data.get("title")
+
+    if not new_title:
+        return jsonify({"error": "New title is required"}), 400
+
+    success = rename_chat(chat_id, new_title)
+
+    if success:
+        return jsonify({"message": "Chat renamed successfully"}), 200
+    else:
+        return jsonify({"error": "Failed to rename chat"}), 500
+    
+@chat_bp.route("/<chat_id>", methods=["DELETE"])
+def delete_chat_route(chat_id):
+    """API Endpoint to delete a chat and its messages"""
+    success = delete_chat(chat_id)
+
+    if success:
+        return jsonify({"message": "Chat and messages deleted successfully"}), 200
+    else:
+        return jsonify({"error": "Failed to delete chat"}), 500

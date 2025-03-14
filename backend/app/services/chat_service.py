@@ -110,3 +110,22 @@ def get_chat_messages(chat_id):
     for msg in messages:
         msg["_id"] = str(msg["_id"])
     return messages
+
+def rename_chat(chat_id, new_title):
+    """Rename an existing chat by updating its title."""
+    result = chats_collection.update_one(
+        {"_id": ObjectId(chat_id)},
+        {"$set": {"title": new_title, "updated_at": datetime.utcnow().isoformat()}}
+    )
+    return result.modified_count > 0  # ✅ Returns True if update was successful
+
+def delete_chat(chat_id):
+    """Delete a chat and all its related messages."""
+    # ✅ Step 1: Delete messages linked to this chat
+    messages_result = messages_collection.delete_many({"chat_id": chat_id})
+    
+    # ✅ Step 2: Delete the chat itself
+    chat_result = chats_collection.delete_one({"_id": ObjectId(chat_id)})
+
+    # ✅ Return True only if the chat was deleted
+    return chat_result.deleted_count > 0
