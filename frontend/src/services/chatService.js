@@ -5,9 +5,7 @@ const CHAT_API_URL = "http://localhost:5000/chat";
 // ✅ Fetch all chats for a user
 export const fetchUserChats = async (userId) => {
   try {
-    console.log("📡 Fetching chat titles for user:", userId);
     const response = await axios.get(`${CHAT_API_URL}/${userId}`);
-    console.log("🛠️ Chat Titles Response:", response.data);
     return response.data.chats || []; // ✅ Ensure it always returns an array
   } catch (error) {
     console.error("❌ Error fetching chat history:", error);
@@ -23,9 +21,7 @@ export const fetchChatMessages = async (chatId) => {
   }
 
   try {
-    console.log("📡 Fetching messages for chat:", chatId);
     const response = await axios.get(`${CHAT_API_URL}/messages/${chatId}`);
-    console.log("📥 API Response:", response.data.messages);
     return response.data.messages || [];
   } catch (error) {
     console.error("❌ Error fetching chat messages:", error);
@@ -43,10 +39,7 @@ export const sendMessage = async (chatId, role, message) => {
       content: message
     };
 
-    console.log("📤 Sending message:", payload);
-
     const response = await axios.post(`${CHAT_API_URL}/message`, payload);
-    console.log("🛠️ API Response:", response.data);
 
     return response.data; // ✅ Returns { chat_id, message_id, message }
   } catch (error) {
@@ -58,9 +51,7 @@ export const sendMessage = async (chatId, role, message) => {
 // ✅ Delete a chat session
 export const deleteChat = async (chatId) => {
   try {
-    console.log("🗑️ Deleting chat:", chatId);
     await axios.delete(`${CHAT_API_URL}/${chatId}`);
-    console.log("✅ Chat deleted successfully.");
     return true;
   } catch (error) {
     console.error("❌ Error deleting chat:", error);
@@ -79,6 +70,18 @@ export const renameChat = async (chatId, newTitle) => {
     return response.data;
   } catch (error) {
     console.error("❌ Error renaming chat:", error);
+    return null;
+  }
+};
+
+
+// ✅ Delete a specific message
+export const deleteMessage = async (messageId) => {
+  try {
+    const response = await axios.delete(`${CHAT_API_URL}/message/${messageId}`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error deleting message:", error);
     return null;
   }
 };

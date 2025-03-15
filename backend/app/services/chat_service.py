@@ -34,20 +34,20 @@ def delete_chat(chat_id):
 
 
 
-def store_message(chat_id, role, content, token_count=0):
+def store_message(chat_id, role, content, token_count=0, parent_message_id=None):
     """Store both user and assistant messages in an existing chat session."""
 
     print(f"📝 Storing message - Chat ID: {chat_id}, Role: {role}, Content: {content}")
 
-    message = Message(chat_id=chat_id, role=role, content=content, token_count=token_count)
+    message = Message(chat_id=chat_id, role=role, content=content, token_count=token_count, parent_message_id=parent_message_id)
     result = messages_collection.insert_one(message.to_dict())
-    message_id = str(result.inserted_id)
+    message_id = str(result.inserted_id)  # ✅ Store the generated _id
 
     chat = chats_collection.find_one({"_id": ObjectId(chat_id)})
 
     if not chat:
         print(f"⚠️ Chat not found: {chat_id}")
-        return message_id
+        return {"message_id": message_id}  # ✅ Ensure message_id is returned
 
     # ✅ Step 1: Generate AI response if user sends message
     if role == "user":
@@ -56,7 +56,7 @@ def store_message(chat_id, role, content, token_count=0):
 
         if assistant_reply:
             print(f"🤖 AI Response Received: {assistant_reply}")
-            assistant_message = Message(chat_id=chat_id, role="assistant", content=assistant_reply)
+            assistant_message = Message(chat_id=chat_id, role="assistant", content=assistant_reply, parent_message_id=message_id)  # ✅ Link AI response to user message
             assistant_result = messages_collection.insert_one(assistant_message.to_dict())
             assistant_message_id = str(assistant_result.inserted_id)
 
@@ -101,14 +101,16 @@ def store_message(chat_id, role, content, token_count=0):
             }
         )
 
-    return message_id
-
+    return {"message_id": message_id}  # ✅ Ensure message_id is returned
 
 def get_chat_messages(chat_id):
     """Retrieve all messages within a chat session."""
     messages = list(messages_collection.find({"chat_id": chat_id}))
+    
+    # ✅ Ensure each message includes `_id` as a string
     for msg in messages:
-        msg["_id"] = str(msg["_id"])
+        msg["_id"] = str(msg["_id"])  # ✅ Convert ObjectId to string
+    
     return messages
 
 def rename_chat(chat_id, new_title):
@@ -129,3 +131,28 @@ def delete_chat(chat_id):
 
     # ✅ Return True only if the chat was deleted
     return chat_result.deleted_count > 0
+
+def delete_message(message_id):
+    """Delete a message and all related messages below it."""
+    try:
+        # ✅ Step 1: Find the message
+        message = messages_collection.find_one({"_id": ObjectId(message_id)})
+        if not message:
+            return {"error": "Message not found"}, 404
+
+        chat_id = message["chat_id"]
+        timestamp = message["timestamp"]  # ✅ Get the timestamp of the message
+
+        # ✅ Step 2: Delete all messages in this chat that have a later timestamp
+        deleted_result = messages_collection.delete_many({
+            "chat_id": chat_id,
+            "timestamp": {"$gte": timestamp}  # ✅ Deletes this message and all below it
+        })
+
+        return {
+            "message": "Message and all messages below it deleted",
+            "deleted_count": deleted_result.deleted_count
+        }, 200
+
+    except Exception as e:
+        return {"error": str(e)}, 500

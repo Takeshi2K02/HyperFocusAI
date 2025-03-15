@@ -1,95 +1,96 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchChatMessages, fetchUserChats , sendMessage } from "../services/chatService";
+import { fetchChatMessages, fetchUserChats, sendMessage, deleteMessage } from "../services/chatService";
 import { useChat } from "../context/ChatContext";
 
 const Chatbot = () => {
   const { chatId: urlChatId } = useParams();
   const navigate = useNavigate();
-  const { chatId, setChatId, chats, setChats, userId } = useChat();  // ✅ userId now exists
+  const { chatId, setChatId, chats, setChats, userId } = useChat();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
   // ✅ Sync `chatId` from URL
-useEffect(() => {
-  if (urlChatId && chatId !== urlChatId) {
+  useEffect(() => {
+    if (urlChatId && chatId !== urlChatId) {
       setChatId(urlChatId);
-  }
-}, [urlChatId, chatId, setChatId]);
+    }
+  }, [urlChatId, chatId, setChatId]);
 
-// ✅ Redirect to a new chat when the current chat is deleted
-useEffect(() => {
-  if (!chatId) {
-      console.log("⚠️ Active chat deleted. Redirecting to new chat...");
-      navigate("/chat");  // ✅ Redirect to a new chat
-  }
-}, [chatId, navigate]);
+  // ✅ Redirect to a new chat when the current chat is deleted
+  useEffect(() => {
+    if (!chatId) {
+      navigate("/chat");
+    }
+  }, [chatId, navigate]);
 
-// ✅ Load messages when `chatId` changes
-useEffect(() => {
-  if (!chatId) return;
+  // ✅ Load messages when `chatId` changes
+  useEffect(() => {
+    if (!chatId) return;
 
-  const loadMessages = async () => {
-      console.log("📩 Fetching messages for chat:", chatId);
+    const loadMessages = async () => {
       const chatData = await fetchChatMessages(chatId);
 
       if (chatData && Array.isArray(chatData) && chatData.length > 0) {
-          console.log("✅ Messages exist:", chatData.length, "messages found.");
-          setMessages(chatData);
+        setMessages(chatData);
       } else {
-          console.warn("⚠️ No messages found for this chat.");
-          setMessages([]);
+        setMessages([]);
       }
+    };
+
+    loadMessages();
+  }, [chatId]);
+
+  // ✅ Scroll to the latest message when `messages` update
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ✅ Handle Message Deletion
+  const handleDeleteMessage = async (messageId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this message and all below it?");
+    if (!confirmDelete) return;
+
+    const response = await deleteMessage(messageId);
+    if (response) {
+      // ✅ Reload messages after deletion
+      const updatedMessages = await fetchChatMessages(chatId);
+      setMessages(updatedMessages);
+    }
   };
 
-  loadMessages();
-}, [chatId]);
-
-// ✅ Scroll to the latest message when `messages` update
-useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-}, [messages]);
-
-
+  // ✅ Handle Sending a Message
   const handleSendMessage = async () => {
     if (!input.trim()) return;
-
-    console.log("💬 Sending message:", input, "to chat:", chatId);
-
     const userMessage = { role: "user", content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
 
     try {
-        const response = await sendMessage(chatId, "user", input);
-        console.log("🛠️ API Response:", response);
+      const response = await sendMessage(chatId, "user", input);
 
-        // ✅ If a new chat is created, update the context & sidebar instantly
-        if (!chatId && response.chat_id) {
-            console.log("🔄 New chat detected. Updating context & sidebar.");
-            setChatId(response.chat_id);
-            navigate(`/chat/${response.chat_id}`);
-        }
+      // ✅ If a new chat is created, update the context & sidebar instantly
+      if (!chatId && response.chat_id) {
+        setChatId(response.chat_id);
+        navigate(`/chat/${response.chat_id}`);
+      }
 
-        // ✅ Fetch latest messages immediately
-        const updatedMessages = await fetchChatMessages(response.chat_id || chatId);
-        setMessages(updatedMessages);
+      // ✅ Fetch latest messages immediately
+      const updatedMessages = await fetchChatMessages(response.chat_id || chatId);
+      setMessages(updatedMessages);
 
-        // ✅ Fetch updated chat list to get AI-generated title
-        if (userId) {
-            console.log("🔄 Fetching updated chat list for user:", userId);
-            const updatedChats = await fetchUserChats(userId);  
-            setChats(updatedChats);  // ✅ Update sidebar with correct AI-generated title
-        } else {
-            console.warn("⚠️ userId is not defined. Skipping chat update.");
-        }
-
+      // ✅ Fetch updated chat list to get AI-generated title
+      if (userId) {
+        const updatedChats = await fetchUserChats(userId);
+        setChats(updatedChats);
+      } else {
+        console.warn("⚠️ userId is not defined. Skipping chat update.");
+      }
     } catch (error) {
-        console.error("❌ Error sending message:", error);
+      console.error("❌ Error sending message:", error);
     }
   };
-
 
   return (
     <div style={styles.chatContainer}>
@@ -104,7 +105,12 @@ useEffect(() => {
                 ...(msg.role === "user" ? styles.userMessage : styles.assistantMessage),
               }}
             >
-              {msg.content}
+              <span>{msg.content}</span>
+              
+              {/* ✅ Add Delete Button for User Messages */}
+              {msg.role === "user" && (
+                <button onClick={() => handleDeleteMessage(msg.message_id)} style={styles.deleteButton}>🗑️</button>
+              )}
             </div>
           ))
         ) : (
@@ -152,16 +158,29 @@ const styles = {
     maxWidth: "60%",
     wordWrap: "break-word",
     fontSize: "16px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   userMessage: {
     alignSelf: "flex-end",
     backgroundColor: "#007bff",
     color: "white",
+    padding: "10px",
   },
   assistantMessage: {
     alignSelf: "flex-start",
     backgroundColor: "#f1f1f1",
     color: "black",
+    padding: "10px",
+  },
+  deleteButton: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "16px",
+    marginLeft: "10px",
+    color: "red",
   },
   inputContainer: {
     display: "flex",
@@ -176,6 +195,7 @@ const styles = {
     borderRadius: "20px",
     fontSize: "1rem",
     backgroundColor: "#f1f1f1",
+    border: "1px solid #ccc",
   },
   sendButton: {
     backgroundColor: "#007bff",
@@ -184,6 +204,7 @@ const styles = {
     padding: "10px 15px",
     marginLeft: "10px",
     cursor: "pointer",
+    border: "none",
   },
 };
 

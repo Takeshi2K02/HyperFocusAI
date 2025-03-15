@@ -18,14 +18,14 @@ class Chat:
             "messages": self.messages  # Store full messages instead of only IDs
         }
 
-
 class Message:
-    def __init__(self, chat_id, role, content, timestamp=None, token_count=0):
+    def __init__(self, chat_id, role, content, timestamp=None, token_count=0, parent_message_id=None):
         self.chat_id = chat_id  # ✅ Store chat ID
         self.role = role  # "user" or "assistant"
         self.content = content  # Message text
         self.timestamp = timestamp or datetime.utcnow()
         self.token_count = token_count  # Token usage (useful for managing context)
+        self.parent_message_id = parent_message_id  # ✅ Track which message this responds to
 
     def to_dict(self):
         """Convert Message object to dictionary format for MongoDB"""
@@ -35,4 +35,5 @@ class Message:
             "content": self.content,
             "timestamp": self.timestamp.isoformat(),
             "token_count": self.token_count,
+            "parent_message_id": self.parent_message_id  # ✅ Track response relationship
         }

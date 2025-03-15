@@ -5,7 +5,8 @@ from app.services.chat_service import (
     store_message,
     get_chat_messages,
     get_user_chats,
-    rename_chat
+    rename_chat,
+    delete_message
 )
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/chat")
@@ -27,7 +28,6 @@ def fetch_user_chats(user_id):
     print(f"✅ Found {len(formatted_chats)} chats")  # ✅ Debugging
     return jsonify({"chats": formatted_chats}), 200
 
-# ✅ Retrieve messages from a specific chat (Fixed route)
 @chat_bp.route("/messages/<chat_id>", methods=["GET"])
 def fetch_chat_messages(chat_id):
     """Fetch all messages for a given chat, sorted by timestamp."""
@@ -41,10 +41,11 @@ def fetch_chat_messages(chat_id):
 
     formatted_messages = [
         {
-            "message_id": str(msg["_id"]),
+            "message_id": str(msg["_id"]),  # ✅ Convert ObjectId to string for frontend
             "content": msg["content"],
             "role": msg["role"],
-            "timestamp": msg["timestamp"]
+            "timestamp": msg["timestamp"],
+            "parent_message_id": msg.get("parent_message_id")  # ✅ Include parent_message_id
         }
         for msg in messages
     ]
@@ -97,3 +98,9 @@ def delete_chat_route(chat_id):
         return jsonify({"message": "Chat and messages deleted successfully"}), 200
     else:
         return jsonify({"error": "Failed to delete chat"}), 500
+    
+@chat_bp.route("/message/<message_id>", methods=["DELETE"])
+def delete_message_route(message_id):
+    """API Endpoint to delete a message and all its responses."""
+    response, status_code = delete_message(message_id)
+    return jsonify(response), status_code
