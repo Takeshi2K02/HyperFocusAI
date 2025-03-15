@@ -45,17 +45,22 @@ const ChatSidebar = () => {
     setNewTitle("");
   };
 
-  // ✅ Handle Deleting a Chat
   const handleDelete = async (chatId) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this chat?");
     if (!confirmDelete) return;
 
     const success = await deleteChat(chatId);
     if (success) {
-      setChats((prevChats) => prevChats.filter((chat) => chat.chat_id !== chatId));
-      if (chatId === chatId) setChatId(null); // ✅ Reset Context if the active chat is deleted
+        setChats((prevChats) => prevChats.filter((chat) => chat.chat_id !== chatId));
+
+        // ✅ If the deleted chat is the active one, reset chatId and navigate
+        if (chatId === chatId) {
+            setChatId(null);
+            navigate("/chat");  // ✅ Redirect to a new chat
+        }
     }
-  };
+};
+
 
   return (
     <div style={styles.sidebar}>

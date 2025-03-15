@@ -11,37 +11,46 @@ const Chatbot = () => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
-  // ✅ Sync `chatId` from URL or Context
-  useEffect(() => {
-    if (urlChatId && chatId !== urlChatId) {
+  // ✅ Sync `chatId` from URL
+useEffect(() => {
+  if (urlChatId && chatId !== urlChatId) {
       setChatId(urlChatId);
-    }
-  }, [urlChatId, chatId, setChatId]);
+  }
+}, [urlChatId, chatId, setChatId]);
 
-  // ✅ Load messages when chatId changes
-  useEffect(() => {
-    if (!chatId) return;
+// ✅ Redirect to a new chat when the current chat is deleted
+useEffect(() => {
+  if (!chatId) {
+      console.log("⚠️ Active chat deleted. Redirecting to new chat...");
+      navigate("/chat");  // ✅ Redirect to a new chat
+  }
+}, [chatId, navigate]);
 
-    const loadMessages = async () => {
+// ✅ Load messages when `chatId` changes
+useEffect(() => {
+  if (!chatId) return;
+
+  const loadMessages = async () => {
       console.log("📩 Fetching messages for chat:", chatId);
       const chatData = await fetchChatMessages(chatId);
 
       if (chatData && Array.isArray(chatData) && chatData.length > 0) {
-        console.log("✅ Messages exist:", chatData.length, "messages found.");
-        setMessages(chatData);
+          console.log("✅ Messages exist:", chatData.length, "messages found.");
+          setMessages(chatData);
       } else {
-        console.warn("⚠️ No messages found for this chat.");
-        setMessages([]);
+          console.warn("⚠️ No messages found for this chat.");
+          setMessages([]);
       }
-    };
+  };
 
-    loadMessages();
-  }, [chatId]); // ✅ Runs when `chatId` changes
+  loadMessages();
+}, [chatId]);
 
-  // ✅ Scroll to the latest message
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+// ✅ Scroll to the latest message when `messages` update
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages]);
+
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
